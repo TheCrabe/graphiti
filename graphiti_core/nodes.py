@@ -126,7 +126,7 @@ class Node(BaseModel, ABC):
                     uuid=self.uuid,
                 )
 
-            case GraphProvider.KUZU:
+            case GraphProvider.LADYBUG:
                 for label in ['Episodic', 'Community']:
                     await driver.execute_query(
                         f"""
@@ -195,7 +195,7 @@ class Node(BaseModel, ABC):
                         batch_size=batch_size,
                     )
 
-            case GraphProvider.KUZU:
+            case GraphProvider.LADYBUG:
                 for label in ['Episodic', 'Community']:
                     await driver.execute_query(
                         f"""
@@ -251,7 +251,7 @@ class Node(BaseModel, ABC):
                         """,
                         uuids=uuids,
                     )
-            case GraphProvider.KUZU:
+            case GraphProvider.LADYBUG:
                 for label in ['Episodic', 'Community']:
                     await driver.execute_query(
                         f"""
@@ -550,7 +550,7 @@ class EntityNode(Node):
             'created_at': self.created_at,
         }
 
-        if driver.provider == GraphProvider.KUZU:
+        if driver.provider == GraphProvider.LADYBUG:
             entity_data['attributes'] = json.dumps(self.attributes)
             entity_data['labels'] = list(set(self.labels + ['Entity']))
             result = await driver.execute_query(
@@ -1018,7 +1018,7 @@ def get_episodic_node_from_record(record: Any) -> EpisodicNode:
 
 
 def get_entity_node_from_record(record: Any, provider: GraphProvider) -> EntityNode:
-    if provider == GraphProvider.KUZU:
+    if provider == GraphProvider.LADYBUG:
         attributes = json.loads(record['attributes']) if record['attributes'] else {}
     else:
         attributes = record['attributes']

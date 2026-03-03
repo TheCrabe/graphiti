@@ -85,7 +85,7 @@ def calculate_cosine_similarity(vector1: list[float], vector2: list[float]) -> f
 def fulltext_query(query: str, group_ids: list[str] | None, driver: GraphDriver):
     validate_group_ids(group_ids)
 
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         # Kuzu only supports simple queries.
         if len(query.split(' ')) > MAX_QUERY_LENGTH:
             return ''
@@ -204,7 +204,7 @@ async def edge_fulltext_search(
     YIELD relationship AS rel, score
     MATCH (n:Entity)-[e:RELATES_TO {uuid: rel.uuid}]->(m:Entity)
     """
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         match_query = """
         YIELD node, score
         MATCH (n:Entity)-[:RELATES_TO]->(e:RelatesToNode_ {uuid: node.uuid})-[:RELATES_TO]->(m:Entity)
@@ -322,7 +322,7 @@ async def edge_similarity_search(
     match_query = """
         MATCH (n:Entity)-[e:RELATES_TO]->(m:Entity)
     """
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         match_query = """
             MATCH (n:Entity)-[:RELATES_TO]->(e:RelatesToNode_)-[:RELATES_TO]->(m:Entity)
         """
@@ -348,7 +348,7 @@ async def edge_similarity_search(
         filter_query = ' WHERE ' + (' AND '.join(filter_queries))
 
     search_vector_var = '$search_vector'
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         search_vector_var = f'CAST($search_vector AS FLOAT[{len(search_vector)}])'
 
     if driver.provider == GraphProvider.NEPTUNE:
@@ -477,7 +477,7 @@ async def edge_bfs_search(
     if filter_queries:
         filter_query = ' WHERE ' + (' AND '.join(filter_queries))
 
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         # Kuzu stores entity edges twice with an intermediate node, so we need to match them
         # separately for the correct BFS depth.
         depth = bfs_max_depth * 2 - 1
@@ -606,7 +606,7 @@ async def node_fulltext_search(
         filter_query = ' WHERE ' + (' AND '.join(filter_queries))
 
     yield_query = 'YIELD node AS n, score'
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         yield_query = 'WITH node AS n, score'
 
     if driver.provider == GraphProvider.NEPTUNE:
@@ -695,7 +695,7 @@ async def node_similarity_search(
         filter_query = ' WHERE ' + (' AND '.join(filter_queries))
 
     search_vector_var = '$search_vector'
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         search_vector_var = f'CAST($search_vector AS FLOAT[{len(search_vector)}])'
 
     if driver.provider == GraphProvider.NEPTUNE:
@@ -837,7 +837,7 @@ async def node_bfs_search(
             """
         ]
 
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         depth = bfs_max_depth * 2
         match_queries = [
             """
@@ -995,7 +995,7 @@ async def community_fulltext_search(
         filter_params['group_ids'] = group_ids
 
     yield_query = 'YIELD node AS c, score'
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         yield_query = 'WITH node AS c, score'
 
     if driver.provider == GraphProvider.NEPTUNE:
@@ -1139,7 +1139,7 @@ async def community_similarity_search(
             return []
     else:
         search_vector_var = '$search_vector'
-        if driver.provider == GraphProvider.KUZU:
+        if driver.provider == GraphProvider.LADYBUG:
             search_vector_var = f'CAST($search_vector AS FLOAT[{len(search_vector)}])'
 
         query = (
@@ -1279,7 +1279,7 @@ async def get_relevant_nodes(
     if filter_queries:
         filter_query = 'WHERE ' + (' AND '.join(filter_queries))
 
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         embedding_size = len(nodes[0].name_embedding) if nodes[0].name_embedding is not None else 0
         if embedding_size == 0:
             return []
@@ -1488,7 +1488,7 @@ async def get_relevant_edges(
             **filter_params,
         )
     else:
-        if driver.provider == GraphProvider.KUZU:
+        if driver.provider == GraphProvider.LADYBUG:
             embedding_size = (
                 len(edges[0].fact_embedding) if edges[0].fact_embedding is not None else 0
             )
@@ -1674,7 +1674,7 @@ async def get_edge_invalidation_candidates(
             **filter_params,
         )
     else:
-        if driver.provider == GraphProvider.KUZU:
+        if driver.provider == GraphProvider.LADYBUG:
             embedding_size = (
                 len(edges[0].fact_embedding) if edges[0].fact_embedding is not None else 0
             )
@@ -1818,7 +1818,7 @@ async def node_distance_reranker(
     MATCH (center:Entity {uuid: $center_uuid})-[:RELATES_TO]-(n:Entity {uuid: node_uuid})
     RETURN 1 AS score, node_uuid AS uuid
     """
-    if driver.provider == GraphProvider.KUZU:
+    if driver.provider == GraphProvider.LADYBUG:
         query = """
         UNWIND $node_uuids AS node_uuid
         MATCH (center:Entity {uuid: $center_uuid})-[:RELATES_TO]->(e:RelatesToNode_)-[:RELATES_TO]->(n:Entity {uuid: node_uuid})
@@ -2034,7 +2034,7 @@ async def get_embeddings_for_edges(
         match_query = """
             MATCH (n:Entity)-[e:RELATES_TO]-(m:Entity)
         """
-        if driver.provider == GraphProvider.KUZU:
+        if driver.provider == GraphProvider.LADYBUG:
             match_query = """
                 MATCH (n:Entity)-[:RELATES_TO]-(e:RelatesToNode_)-[:RELATES_TO]-(m:Entity)
             """
