@@ -156,6 +156,7 @@ class LadybugDriver(GraphDriver):
         max_concurrent_queries: int = 1,
     ):
         super().__init__()
+        self._database = db
         self.db = lb.Database(db)
 
         self.setup_schema()
