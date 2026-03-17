@@ -1,7 +1,13 @@
-# Graphiti MCP Server Configuration - LadybugDB (embedded, no Docker required)
+# Graphiti MCP Server Configuration - LadybugDB + Ollama (fully local, zero cost)
 #
-# LadybugDB is an embedded graph database (fork of KuzuDB).
-# No external server or Docker needed - the database is a local directory.
+# LadybugDB: embedded graph database (no Docker, no external services)
+# Ollama: local LLM + embeddings (no API keys needed)
+#
+# Prerequisites:
+#   sudo pacman -S ollama
+#   ollama pull nomic-embed-text
+#   ollama pull mistral
+#   systemctl --user start ollama
 #
 # Usage:
 #   uv run main.py --config config/config-ladybug.yaml --transport stdio
@@ -10,34 +16,36 @@ server:
   transport: "stdio"
 
 llm:
-  provider: "anthropic"
-  model: "claude-sonnet-4-5-latest"
+  provider: "openai"  # Ollama exposes an OpenAI-compatible API
+  model: "mistral"
   max_tokens: 4096
 
   providers:
-    anthropic:
-      api_key: ${ANTHROPIC_API_KEY}
+    openai:
+      api_key: "ollama"
+      api_url: "http://localhost:11434/v1"
 
 embedder:
-  provider: "openai"
-  model: "text-embedding-3-small"
-  dimensions: 1536
+  provider: "openai"  # Ollama exposes an OpenAI-compatible API
+  model: "nomic-embed-text"
+  dimensions: 768
 
   providers:
     openai:
-      api_key: ${OPENAI_API_KEY}
+      api_key: "ollama"
+      api_url: "http://localhost:11434/v1"
 
 database:
   provider: "ladybug"
 
   providers:
     ladybug:
-      db_path: ${LADYBUG_DB_PATH:~/.local/share/graphiti/memory.db}
+      db_path: ${LADYBUG_DB_PATH:/home/lecrabe/.local/share/graphiti/memory.db}
       max_concurrent_queries: 1
 
 graphiti:
   group_id: ${GRAPHITI_GROUP_ID:main}
-  user_id: ${USER_ID:mcp_user}
+  user_id: ${USER_ID:lecrabe}
   entity_types:
     - name: "Preference"
       description: "User preferences, choices, opinions, or selections"

@@ -297,20 +297,6 @@ class GraphitiService:
             # Build indices
             await self.client.build_indices_and_constraints()
 
-            # LadybugDB: create FTS indexes manually (build_indices_and_constraints is a no-op)
-            if db_provider == 'ladybug':
-                async with self.client.driver.session() as session:
-                    for fts_query in [
-                        "CALL CREATE_FTS_INDEX('Entity', 'node_name_and_summary', ['name', 'summary'])",
-                        "CALL CREATE_FTS_INDEX('RelatesToNode_', 'edge_name_and_fact', ['name', 'fact'])",
-                    ]:
-                        try:
-                            await session.run(fts_query)
-                        except Exception:
-                            # Index may already exist
-                            pass
-                logger.info('LadybugDB FTS indexes created')
-
             logger.info('Successfully initialized Graphiti client')
 
             # Log configuration details
