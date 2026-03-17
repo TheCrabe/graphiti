@@ -1,0 +1,55 @@
+# Graphiti MCP Server Configuration - LadybugDB (embedded, no Docker required)
+#
+# LadybugDB is an embedded graph database (fork of KuzuDB).
+# No external server or Docker needed - the database is a local directory.
+#
+# Usage:
+#   uv run main.py --config config/config-ladybug.yaml --transport stdio
+
+server:
+  transport: "stdio"
+
+llm:
+  provider: "anthropic"
+  model: "claude-sonnet-4-5-latest"
+  max_tokens: 4096
+
+  providers:
+    anthropic:
+      api_key: ${ANTHROPIC_API_KEY}
+
+embedder:
+  provider: "openai"
+  model: "text-embedding-3-small"
+  dimensions: 1536
+
+  providers:
+    openai:
+      api_key: ${OPENAI_API_KEY}
+
+database:
+  provider: "ladybug"
+
+  providers:
+    ladybug:
+      db_path: ${LADYBUG_DB_PATH:~/.local/share/graphiti/memory.db}
+      max_concurrent_queries: 1
+
+graphiti:
+  group_id: ${GRAPHITI_GROUP_ID:main}
+  user_id: ${USER_ID:mcp_user}
+  entity_types:
+    - name: "Preference"
+      description: "User preferences, choices, opinions, or selections"
+    - name: "Requirement"
+      description: "Specific needs, features, or functionality that must be fulfilled"
+    - name: "Procedure"
+      description: "Standard operating procedures and sequential instructions"
+    - name: "Project"
+      description: "Software projects, repositories, or codebases being worked on"
+    - name: "Decision"
+      description: "Technical or architectural decisions made during development"
+    - name: "Person"
+      description: "People, team members, collaborators"
+    - name: "Tool"
+      description: "Software tools, frameworks, libraries, or services used"

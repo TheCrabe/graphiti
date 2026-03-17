@@ -14,7 +14,13 @@ try:
 except ImportError:
     HAS_FALKOR = False
 
-# Kuzu support removed - FalkorDB is now the default
+# Try to import LadybugDriver if available
+try:
+    from graphiti_core.driver.ladybug_driver import LadybugDriver  # noqa: F401
+
+    HAS_LADYBUG = True
+except ImportError:
+    HAS_LADYBUG = False
 from graphiti_core.embedder import EmbedderClient, OpenAIEmbedder
 from graphiti_core.llm_client import LLMClient, OpenAIClient
 from graphiti_core.llm_client.config import LLMConfig as GraphitiLLMConfig
@@ -429,6 +435,30 @@ class DatabaseDriverFactory:
                     'port': port,
                     'password': password,
                     'database': falkor_config.database,
+                }
+
+            case 'ladybug':
+                if not HAS_LADYBUG:
+                    raise ValueError(
+                        'LadybugDB driver not available. Install with: pip install graphiti-core[ladybug]'
+                    )
+
+                # Use LadybugDB config if provided, otherwise use defaults
+                if config.providers.ladybug:
+                    ladybug_config = config.providers.ladybug
+                else:
+                    from config.schema import LadybugProviderConfig
+
+                    ladybug_config = LadybugProviderConfig()
+
+                import os
+
+                db_path = os.environ.get('LADYBUG_DB_PATH', ladybug_config.db_path)
+
+                return {
+                    'driver': 'ladybug',
+                    'db_path': db_path,
+                    'max_concurrent_queries': ladybug_config.max_concurrent_queries,
                 }
 
             case _:

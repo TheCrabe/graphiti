@@ -211,7 +211,8 @@ class GraphitiService:
 
             # Initialize Graphiti client with appropriate driver
             try:
-                if self.config.database.provider.lower() == 'falkordb':
+                db_provider = self.config.database.provider.lower()
+                if db_provider == 'falkordb':
                     # For FalkorDB, create a FalkorDriver instance directly
                     from graphiti_core.driver.falkordb_driver import FalkorDriver
 
@@ -224,6 +225,21 @@ class GraphitiService:
 
                     self.client = Graphiti(
                         graph_driver=falkor_driver,
+                        llm_client=llm_client,
+                        embedder=embedder_client,
+                        max_coroutines=self.semaphore_limit,
+                    )
+                elif db_provider == 'ladybug':
+                    # For LadybugDB, create a LadybugDriver instance (embedded, no server needed)
+                    from graphiti_core.driver.ladybug_driver import LadybugDriver
+
+                    ladybug_driver = LadybugDriver(
+                        db=db_config['db_path'],
+                        max_concurrent_queries=db_config.get('max_concurrent_queries', 1),
+                    )
+
+                    self.client = Graphiti(
+                        graph_driver=ladybug_driver,
                         llm_client=llm_client,
                         embedder=embedder_client,
                         max_coroutines=self.semaphore_limit,
@@ -280,6 +296,20 @@ class GraphitiService:
 
             # Build indices
             await self.client.build_indices_and_constraints()
+
+            # LadybugDB: create FTS indexes manually (build_indices_and_constraints is a no-op)
+            if db_provider == 'ladybug':
+                async with self.client.driver.session() as session:
+                    for fts_query in [
+                        "CALL CREATE_FTS_INDEX('Entity', 'node_name_and_summary', ['name', 'summary'])",
+                        "CALL CREATE_FTS_INDEX('RelatesToNode_', 'edge_name_and_fact', ['name', 'fact'])",
+                    ]:
+                        try:
+                            await session.run(fts_query)
+                        except Exception:
+                            # Index may already exist
+                            pass
+                logger.info('LadybugDB FTS indexes created')
 
             logger.info('Successfully initialized Graphiti client')
 
@@ -806,7 +836,7 @@ async def initialize_server() -> ServerConfig:
     )
     parser.add_argument(
         '--database-provider',
-        choices=['neo4j', 'falkordb'],
+        choices=['neo4j', 'falkordb', 'ladybug'],
         help='Database provider to use',
     )
 

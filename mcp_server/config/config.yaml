@@ -71,7 +71,7 @@ embedder:
       model: "voyage-3"
 
 database:
-  provider: "falkordb"  # Default: falkordb. Options: neo4j, falkordb
+  provider: "falkordb"  # Default: falkordb. Options: neo4j, falkordb, ladybug
 
   providers:
     falkordb:
@@ -85,6 +85,10 @@ database:
       password: ${NEO4J_PASSWORD}
       database: ${NEO4J_DATABASE:neo4j}
       use_parallel_runtime: ${USE_PARALLEL_RUNTIME:false}
+
+    ladybug:
+      db_path: ${LADYBUG_DB_PATH::memory:}
+      max_concurrent_queries: 1
 
 graphiti:
   group_id: ${GRAPHITI_GROUP_ID:main}
